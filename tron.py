@@ -1,4 +1,5 @@
 import arcade
+import argparse
 
 SPEED = 10 # Pixels per second
 SCREEN_WIDTH = 600
@@ -71,12 +72,13 @@ def collision( seg, path ):
 
 
 class Player:
-    def __init__(self, keys, start, vel, col ):
+    def __init__(self, keys, start, vel, col, controller ):
         self.keys = keys
         self.pos = start
         self.vel = vel
         self.col = col
         self.path = [ start, start ]
+        self.controller = controller
 
 
 class TronGame(arcade.Window):
@@ -84,13 +86,12 @@ class TronGame(arcade.Window):
     """ Our custom Tron Window."""
 
 
-    def __init__(self):
+    def __init__(self, fullscreen):
 
         """ Initializer """
 
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, fullscreen=fullscreen)
 
-        
         self.players = []
         self.msg_text = arcade.Text("Message", 10, 10, arcade.color.WHITE, 14 )
  
@@ -98,16 +99,24 @@ class TronGame(arcade.Window):
 
         self.background_color = arcade.color.OXFORD_BLUE
 
+        print("Now")
+        self.controllers = arcade.get_controllers()[:2]
+        print("Then")
+        self.controllers += [None] * (2 - len(self.controllers))
 
     def setup(self):
-
+        controllers = self.controllers
         """ Set up the game and initialize the variables. """
-
         self.players = [ 
-            Player( [arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S], (300, 50), (0,SPEED), arcade.color.BLUE ),
-            Player( [arcade.key.LEFT,arcade.key.RIGHT, arcade.key.UP, arcade.key.DOWN], (300, 550), (0,-SPEED), arcade.color.YELLOW )
+            Player( [arcade.key.A, arcade.key.D, arcade.key.W, arcade.key.S], (300, 50), (0,SPEED), arcade.color.BLUE, controllers[0] ),
+            Player( [arcade.key.LEFT,arcade.key.RIGHT, arcade.key.UP, arcade.key.DOWN], (300, 550), (0,-SPEED), arcade.color.YELLOW, controllers[1] )
            ]
-        
+       
+        for controller in controllers:
+            if controller:
+                controller.open()
+                controller.push_handlers( self )
+
         self.msg_text.text = "Hello"
 
 
@@ -160,11 +169,11 @@ class TronGame(arcade.Window):
 
 
 
-def main():
+def main( fullscreen ):
 
     """ Main function """
 
-    window = TronGame()
+    window = TronGame( fullscreen )
 
     window.setup()
 
@@ -173,5 +182,7 @@ def main():
 
 
 if __name__ == "__main__":
-
-    main()
+    parser = argparse.ArgumentParser( description = 'Tron.' )
+    parser.add_argument( '--fullscreen', action='store_true')
+    args = parser.parse_args()
+    main(args.fullscreen)
